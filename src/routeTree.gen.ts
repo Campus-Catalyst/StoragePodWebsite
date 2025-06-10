@@ -12,6 +12,7 @@
 
 import { Route as rootRoute } from './routes/__root'
 import { Route as LoginImport } from './routes/login'
+import { Route as FilesImport } from './routes/files'
 import { Route as DevicesImport } from './routes/devices'
 import { Route as DashboardImport } from './routes/dashboard'
 
@@ -20,6 +21,12 @@ import { Route as DashboardImport } from './routes/dashboard'
 const LoginRoute = LoginImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const FilesRoute = FilesImport.update({
+  id: '/files',
+  path: '/files',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -53,6 +60,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DevicesImport
       parentRoute: typeof rootRoute
     }
+    '/files': {
+      id: '/files'
+      path: '/files'
+      fullPath: '/files'
+      preLoaderRoute: typeof FilesImport
+      parentRoute: typeof rootRoute
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -68,12 +82,14 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/devices': typeof DevicesRoute
+  '/files': typeof FilesRoute
   '/login': typeof LoginRoute
 }
 
 export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/devices': typeof DevicesRoute
+  '/files': typeof FilesRoute
   '/login': typeof LoginRoute
 }
 
@@ -81,27 +97,30 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/dashboard': typeof DashboardRoute
   '/devices': typeof DevicesRoute
+  '/files': typeof FilesRoute
   '/login': typeof LoginRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/dashboard' | '/devices' | '/login'
+  fullPaths: '/dashboard' | '/devices' | '/files' | '/login'
   fileRoutesByTo: FileRoutesByTo
-  to: '/dashboard' | '/devices' | '/login'
-  id: '__root__' | '/dashboard' | '/devices' | '/login'
+  to: '/dashboard' | '/devices' | '/files' | '/login'
+  id: '__root__' | '/dashboard' | '/devices' | '/files' | '/login'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DevicesRoute: typeof DevicesRoute
+  FilesRoute: typeof FilesRoute
   LoginRoute: typeof LoginRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DevicesRoute: DevicesRoute,
+  FilesRoute: FilesRoute,
   LoginRoute: LoginRoute,
 }
 
@@ -117,6 +136,7 @@ export const routeTree = rootRoute
       "children": [
         "/dashboard",
         "/devices",
+        "/files",
         "/login"
       ]
     },
@@ -125,6 +145,9 @@ export const routeTree = rootRoute
     },
     "/devices": {
       "filePath": "devices.jsx"
+    },
+    "/files": {
+      "filePath": "files.jsx"
     },
     "/login": {
       "filePath": "login.jsx"
