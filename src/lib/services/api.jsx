@@ -8,8 +8,9 @@ export const getJWT = async () => {
 };
 
 export const baseURL = () => {
-  return 'https://nas.campuscatalyst.info/api/v1';
+  return 'https://nas3.campuscatalyst.info/api/v1';
 };
+
 
 
 export const getFileExplorerData = (path) => {

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 
 import { AppSidebar } from '@/components/app-sidebar';
 import {
-  Image, Video, FileText, Folder, File, ArrowLeft
+  Image, Video, FileText, Folder, File, ArrowLeft,ChevronRight
 } from 'lucide-react';
 import {
   Sidebar,
@@ -21,6 +21,12 @@ import {
 import { Separator } from "@/components/ui/separator";
 import useFileExplorerStore from '../stores/fileExplorerStore'; 
 import { useFileExplorerFiles } from '../lib/services/queries'; 
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 
 
 const formatDate = (isoString) => {
@@ -31,6 +37,13 @@ const formatDate = (isoString) => {
     hour: 'numeric', minute: 'numeric', hour12: true
   });
 };
+const formatBytes = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 
 export function FileExplorerPage() {
@@ -38,39 +51,31 @@ export function FileExplorerPage() {
   const currentPath = useFileExplorerStore((state) => state.currentPath);
   const goToDirectory = useFileExplorerStore((state) => state.goToDirectory);
   const goUpDirectory = useFileExplorerStore((state) => state.goUpDirectory);
-  const setCurrentPath= useFileExplorerStore((state)=>state.currentPath);
+  const setCurrentPath= useFileExplorerStore((state)=>state.setCurrentPath);
     const { data: files, isLoading, isError, error } = useFileExplorerFiles(currentPath);
 
  
 
  
   const allItems = useMemo(() => {
-    // Removed console.log('useMemo: Processing files. isLoading:', isLoading, 'isError:', isError, 'files received:', files);
     if (isLoading || isError || !files) {
       return [];
     }
-
-    // Combine both directories and regular files into a single array
     const combined = [...files];
 
-    // Sort by type (directories first), then alphabetically by name
     combined.sort((a, b) => {
-      // Directories come before files
       if (a.is_directory && !b.is_directory) return -1;
       if (!a.is_directory && b.is_directory) return 1;
-      // Then sort alphabetically by name
       return a.name.localeCompare(b.name);
     });
 
-    // Removed console.log('useMemo Output: All Items:', combined);
     return combined;
   }, [files, isLoading, isError]);
 
   const getFileIcon = (item) => {
-    // Ensure item and item.name are defined before attempting to split
     if (!item || typeof item.name !== 'string') {
         console.warn("getFileIcon received invalid item:", item);
-        return <File className="w-5 h-5 text-gray-500" />; // Fallback icon
+        return <File className="w-5 h-5 text-gray-500" />; 
     }
 
     if (item.is_directory) {
@@ -127,9 +132,11 @@ const pathSegments = currentPath.split('/').filter(segment => segment !== '');
                           <BreadcrumbPage>{segment}</BreadcrumbPage>
                         ) : (
                          <BreadcrumbLink
-                            href="javascript:void(0)"
+                            href="#"
+                            
                             onClick={(e) => {
-                             goToDirectory(path);
+                                console.log('Breadcrumb Click: Setting path to absolute:', path);
+                             setCurrentPath(path);
                             }}
                           >
                             {segment}
@@ -142,7 +149,7 @@ const pathSegments = currentPath.split('/').filter(segment => segment !== '');
               </BreadcrumbList>
             </Breadcrumb>
           </div>
-          <div className="ml-auto pr-4"> {/* Added pr-4 for right padding */}
+          <div className="ml-auto pr-4"> 
             {currentPath !== '/' && (
               <button
                 onClick={handleGoUp}
@@ -174,27 +181,41 @@ const pathSegments = currentPath.split('/').filter(segment => segment !== '');
                   </button>
                 )}
               </div>
-
-              {/* Directories Section as a List */}
+              <ContextMenu>
+                <ContextMenuTrigger>
                {allItems.length > 0 && (
-                <div className="mb-8 p-2 rounded-lg bg-card shadow-sm">
-                  {/* Removed separate headings */}
+                <div className="mb-8 p-2 rounded-lg bg-card ">
                   <div className="divide-y divide-border">
                     {allItems.map(item => (
                       <div
                         key={item.id}
-                        className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors
+                        className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors 
                                     ${item.is_directory ? 'bg-blue-50 hover:bg-blue-100' : 'bg-green-50 hover:bg-green-100'}`}
                         onClick={() => item.is_directory ? handleDirectoryClick(item.name) : null}
                       >
+                        {item.is_directory && <ChevronRight className="w-4 h-4 text-gray-500 mr-1" />}
                         {getFileIcon(item)}
-                        <span className="font-medium text-foreground text-base truncate ml-3">{item.name}</span>
-                        <span className="text-sm text-muted-foreground">{formatDate(item.modified_at)}</span>
+                        <div className="flex flex-col ml-3 flex-grow  ">
+                        <span className="font-medium text-foreground text-base truncate ">{item.name}</span>
+                       
+                        {!item.is_directory && (
+                          <span className="mr-auto text-sm text-muted-foreground ">{formatBytes(item.size)}</span>
+                        )}
+                        </div>
+                         {!item.is_directory && (
+                            <span className="ml-auto text-sm text-muted-foreground">{formatDate(item.modified_at)}</span>
+                        )}
+                        
                       </div>
                     ))}
                   </div>
                 </div>
               )}
+                </ContextMenuTrigger>
+                <ContextMenuContent>
+                    <ContextMenuItem>Delete</ContextMenuItem>
+                </ContextMenuContent>
+              </ContextMenu>
               {allItems.length === 0 && !isLoading && !isError && (
                 <div className="text-center text-muted-foreground">
                   No files or directories found in this location.
