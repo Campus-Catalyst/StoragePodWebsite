@@ -1,15 +1,28 @@
 import React, { useMemo } from 'react';
+import { useMutation , useQueryClient} from '@tanstack/react-query';
 
 import { AppSidebar } from '@/components/app-sidebar';
 import {
   Image, Video, FileText, Folder, File, ArrowLeft,ChevronRight
 } from 'lucide-react';
+import { deleteFileOrFolder } from '../lib/services/api';
 import {
   Sidebar,
   SidebarProvider,
   SidebarInset,
   SidebarTrigger
 } from '@/components/ui/sidebar';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -20,7 +33,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import useFileExplorerStore from '../stores/fileExplorerStore'; 
-import { useFileExplorerFiles } from '../lib/services/queries'; 
+import { useFileExplorerFiles,deleteMutation } from '../lib/services/queries'; 
 import {
   ContextMenu,
   ContextMenuContent,
@@ -53,8 +66,6 @@ export function FileExplorerPage() {
   const goUpDirectory = useFileExplorerStore((state) => state.goUpDirectory);
   const setCurrentPath= useFileExplorerStore((state)=>state.setCurrentPath);
     const { data: files, isLoading, isError, error } = useFileExplorerFiles(currentPath);
-
- 
 
  
   const allItems = useMemo(() => {
@@ -93,9 +104,18 @@ export function FileExplorerPage() {
         return <File className="w-5 h-5 text-gray-500" />;
     }
   };
+ 
 
   const handleDirectoryClick = (dirName) => {
     goToDirectory(dirName); 
+  };
+   const handleDeleteItem = async (itemName) => {
+    const itemPath = currentPath === '/' ? `/${itemName}` : `${currentPath}/${itemName}`;
+    console.log('Attempting to delete item via useMutation:', itemPath);
+    try {
+      await deleteMutation.mutateAsync(itemPath);
+    } catch (err) {
+    }
   };
 
   const handleGoUp = () => {
@@ -181,12 +201,14 @@ const pathSegments = currentPath.split('/').filter(segment => segment !== '');
                   </button>
                 )}
               </div>
-              <ContextMenu>
-                <ContextMenuTrigger>
+                
                {allItems.length > 0 && (
+                
                 <div className="mb-8 p-2 rounded-lg bg-card ">
                   <div className="divide-y divide-border">
                     {allItems.map(item => (
+                        <ContextMenu key={item.id}>
+                            <ContextMenuTrigger>
                       <div
                         key={item.id}
                         className={`flex items-center p-3 rounded-lg cursor-pointer transition-colors 
@@ -207,15 +229,32 @@ const pathSegments = currentPath.split('/').filter(segment => segment !== '');
                         )}
                         
                       </div>
-                    ))}
+                      </ContextMenuTrigger>
+                      <ContextMenuContent>
+                          {/* Pass the item's name to the handleDeleteItem function */}
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                          <ContextMenuItem  onSelect={(e) => e.preventDefault()}>Delete</ContextMenuItem>
+                           </AlertDialogTrigger>
+                           <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>This action cannot be undone. This will permanently delete </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteItem(item.name)}>delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        </ContextMenuContent>
+                      </ContextMenu>
+                      
+                    ))
+                    }
                   </div>
                 </div>
               )}
-                </ContextMenuTrigger>
-                <ContextMenuContent>
-                    <ContextMenuItem>Delete</ContextMenuItem>
-                </ContextMenuContent>
-              </ContextMenu>
               {allItems.length === 0 && !isLoading && !isError && (
                 <div className="text-center text-muted-foreground">
                   No files or directories found in this location.
