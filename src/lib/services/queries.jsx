@@ -1,7 +1,6 @@
 import { useQuery } from '@tanstack/react-query'; 
 import { useMutation , useQueryClient} from '@tanstack/react-query';
-import { getFileExplorerData} from './api';
-
+import { getFileExplorerData,deleteFileOrFolder} from './api';
 
 export const useFileExplorerFiles = (currentPath) => {
   return useQuery({
@@ -12,13 +11,16 @@ export const useFileExplorerFiles = (currentPath) => {
   });
 };
  
- export  const useDeleteFileOrFolderMutation=()=>{
-  const queryClient= useQueryClient();
+
+
+  export  const useDeleteFileOrFolderMutation=(currentpath)=>{
+   const queryClient = useQueryClient(); 
+
   return useMutation({
-    mutationFn: deleteFileOrFolder, 
-    onSuccess: () => {
-      queryClient.invalidateQueries(['allFiles', currentPath]);
-      console.log('Item deleted successfully! Refetching file list.');
+    mutationFn: deleteFileOrFolder,
+    onSuccess: () => { 
+        queryClient.invalidateQueries(['fileExplorerFiles', currentpath]); 
+     
     },
     onError: (err) => {
       console.error('Error deleting item:', err);

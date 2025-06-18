@@ -109,18 +109,22 @@ export function FileExplorerPage() {
   const handleDirectoryClick = (dirName) => {
     goToDirectory(dirName); 
   };
+  const deleteMutation = useDeleteFileOrFolderMutation();
    const handleDeleteItem = async (itemName) => {
-    const itemPath = currentPath === '/' ? `/${itemName}` : `${currentPath}/${itemName}`;
-    console.log('Attempting to delete item via useMutation:', itemPath);
+     const itemPath = currentPath === '/' ? `/${itemName}` : `${currentPath}/${itemName}`;
     try {
-      await deleteFileOrFolder.mutateAsync(itemPath);
+      await deleteMutation.mutateAsync(itemPath);
     } catch (err) {
+      console.error("Failed to initiate delete mutation or an unexpected error occurred:", err);
     }
   };
+
+  
 
   const handleGoUp = () => {
     goUpDirectory(); 
   };
+  
 const pathSegments = currentPath.split('/').filter(segment => segment !== '');
   return (
     <SidebarProvider>
