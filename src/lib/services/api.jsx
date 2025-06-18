@@ -10,20 +10,47 @@ export const getJWT = async () => {
 export const baseURL = () => {
   return 'https://nas3.campuscatalyst.info/api/v1';
 };
+const apiClient = axios.create({
+  baseURL: baseURL(),
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json', 
+  },
+});
+apiClient.interceptors.request.use(
+  async (config) => {
+    const token = await getJWT(); 
+
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+apiClient.interceptors.response.use(
+  (response) => {
+    return response; 
+  },
+  (error) => {
+    
+    // Example: Global handling for 401 Unauthorized
+    if (axios.isAxiosError(error) && error.response && error.response.status === 401) {
+      console.warn('Unauthorized request. Authentication failed or token expired. Consider redirecting to login.');
+    }
+
+    return Promise.reject(error); 
+  }
+);
 
 export const getFileExplorerData = (path) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const token = await getJWT();
-      if (!token) {
-        return reject(new Error('Authentication token not found. Please log in.'));
-      }
       const apiUrl = `${baseURL()}/files/?path=${encodeURIComponent(path)}`;
-      const response = await axios.get(apiUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+     const response = await apiClient.get(apiUrl); 
 
 
   if (response.error) {
@@ -40,17 +67,9 @@ export const getFileExplorerData = (path) => {
 export const deleteFileOrFolder = (itemPath) => {
   return new Promise(async (resolve, reject) => {
     try {
-      const token = await getJWT();
-      if (!token) {
-        return reject(new Error('Authentication token not found. Please log in.'));
-      }
       const apiUrl = `${baseURL()}/files/?path=${encodeURIComponent(itemPath)}`;
       console.log('API Request (Delete File/Folder): Deleting item at URL:', apiUrl);
-      const response = await axios.delete(apiUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+       const response = await apiClient.delete(apiUrl);
    if (response.error) {
     return reject(response.error);
   }

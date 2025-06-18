@@ -33,7 +33,7 @@ import {
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import useFileExplorerStore from '../stores/fileExplorerStore'; 
-import { useFileExplorerFiles,deleteMutation } from '../lib/services/queries'; 
+import { useFileExplorerFiles,useDeleteFileOrFolderMutation} from '../lib/services/queries'; 
 import {
   ContextMenu,
   ContextMenuContent,
@@ -113,7 +113,7 @@ export function FileExplorerPage() {
     const itemPath = currentPath === '/' ? `/${itemName}` : `${currentPath}/${itemName}`;
     console.log('Attempting to delete item via useMutation:', itemPath);
     try {
-      await deleteMutation.mutateAsync(itemPath);
+      await deleteFileOrFolder.mutateAsync(itemPath);
     } catch (err) {
     }
   };
